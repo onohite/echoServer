@@ -1,0 +1,24 @@
+version: "3.9"  # optional since v1.27.0
+services:
+  web:
+    build: .
+    environment:
+      - DBUSER=user
+    ports:
+      - "80:80"
+    depends_on:
+      - web-db
+    links:
+      - web-db
+  web-db:
+    container_name: web-db
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=db
+    ports:
+      - 5432:5432
+    volumes:
+      - ./storage/postgresql/data:/var/lib/postgresql/data
+    restart: unless-stopped
