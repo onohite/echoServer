@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"echoTest/internal/db"
+	"echoTest/internal/service/db"
 	"github.com/labstack/echo/v4"
 )
 
@@ -17,7 +17,7 @@ type UsersResponse struct {
 }
 
 func (h *Handler) GetUsers(c echo.Context) error {
-	users, err := h.DB.GetAllUsers()
+	users, err := h.Services.DB.GetAllUsers()
 	if err != nil {
 		return c.JSON(500, err)
 	}

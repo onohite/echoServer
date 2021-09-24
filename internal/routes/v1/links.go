@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"echoTest/internal/db"
+	"echoTest/internal/service/db"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
@@ -20,7 +20,7 @@ type Links struct {
 }
 
 func (h Handler) GetListLink(c echo.Context) error {
-	links, err := h.DB.GetAllLinks()
+	links, err := h.Services.DB.GetAllLinks()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -31,7 +31,7 @@ func (h Handler) GetListLink(c echo.Context) error {
 func (h Handler) GetLink(c echo.Context) error {
 	id := c.Param("id")
 
-	link, err := h.DB.GetLinkById(id)
+	link, err := h.Services.DB.GetLinkById(id)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -45,7 +45,7 @@ func (h Handler) AddLink(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	if err := h.DB.AddLink(link); err != nil {
+	if err := h.Services.DB.AddLink(link); err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	return c.NoContent(http.StatusOK)

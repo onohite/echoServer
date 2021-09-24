@@ -19,7 +19,6 @@ vendor/
 .env
 
 .idea/
-app
 storage/
 
 # ignore files in folder
