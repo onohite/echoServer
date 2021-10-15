@@ -16,6 +16,10 @@ const (
 	defaultDBuser     = "user"
 	defaultDBpass     = "pass"
 	defaultDBname     = "db"
+	defaultQuHost     = "10.80.32.66"
+	defaultQuPort     = "5672"
+	defaultQuUser     = "guest"
+	defaultQuPass     = "guest"
 )
 
 type Config struct {
@@ -23,6 +27,7 @@ type Config struct {
 	Port           string
 	ServerMode     string
 	PostgresAdress string
+	QueueAdress    string
 }
 
 func Init() *Config {
@@ -43,7 +48,7 @@ func Init() *Config {
 
 	var DbUser string
 	if DbUser, ok = os.LookupEnv("DBUSER"); !ok {
-		DbUser = "123"
+		DbUser = defaultDBuser
 	}
 
 	var DbPassword string
@@ -71,8 +76,29 @@ func Init() *Config {
 		DbSslMode = defaultDSSLMode
 	}
 
+	var QuHost string
+	if QuHost, ok = os.LookupEnv("QUEUE_HOST"); !ok {
+		QuHost = defaultQuHost
+	}
+
+	var QuPort string
+	if QuPort, ok = os.LookupEnv("QUEUE_PORT"); !ok {
+		QuPort = defaultQuPort
+	}
+
+	var QuUser string
+	if QuUser, ok = os.LookupEnv("QUEUE_USER"); !ok {
+		QuUser = defaultQuUser
+	}
+
+	var QuPass string
+	if QuPass, ok = os.LookupEnv("QUEUE_PASS"); !ok {
+		QuPass = defaultQuPass
+	}
+
 	postgresAddr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		DbHost, DbPort, DbUser, DbPassword, DbName, DbSslMode)
+	queueAddress := fmt.Sprintf("amqp://%s:%s@%s:%s/", QuUser, QuPass, QuHost, QuPort)
 
-	return &Config{host, port, serverMode, postgresAddr}
+	return &Config{host, port, serverMode, postgresAddr, queueAddress}
 }

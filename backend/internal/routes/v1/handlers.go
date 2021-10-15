@@ -1,21 +1,22 @@
 package v1
 
 import (
-	"echoTest/internal/db"
+	"echoTest/internal/service"
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
-	DB db.DBService
+	Services *service.Service
 }
 
-func NewHandler(db db.DBService) *Handler {
-	return &Handler{db}
+func NewHandler(services *service.Service) *Handler {
+	return &Handler{services}
 }
 
 func (h *Handler) Init(api *echo.Group) {
 	v1 := api.Group("/v1")
 	{
 		h.initUsersRoutes(v1)
+		h.initLinksRoutes(v1)
 	}
 }

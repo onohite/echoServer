@@ -3,8 +3,8 @@ package routes
 import (
 	"echoTest/docs/docs"
 	"echoTest/internal/config"
-	"echoTest/internal/db"
 	v1 "echoTest/internal/routes/v1"
+	"echoTest/internal/service"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -13,10 +13,10 @@ import (
 )
 
 type Handler struct {
-	DB db.DBService
+	Services *service.Service
 }
 
-func NewHandler(service db.DBService) *Handler {
+func NewHandler(service *service.Service) *Handler {
 	return &Handler{service}
 }
 
@@ -54,7 +54,7 @@ func (h *Handler) Init(cfg *config.Config) *echo.Echo {
 }
 
 func (h *Handler) initAPI(router *echo.Echo) {
-	handlerV1 := v1.NewHandler(h.DB)
+	handlerV1 := v1.NewHandler(h.Services)
 	api := router.Group("/api")
 	{
 		handlerV1.Init(api)

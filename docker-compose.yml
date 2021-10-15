@@ -1,24 +1,70 @@
 version: "3.9"  # optional since v1.27.0
 services:
   web:
-    build: .
+    container_name: 'web'
+    build: ./backend
     environment:
+      - SERVER_MODE=dev
+      - HOST=0.0.0.0
+      - PORT=80
       - DBUSER=user
+      - DBPASSWORD=pass
+      - DBNAME=db
+      - DBHOST=web-db
+      - DBPORT=5432
+      - DBSSLMODE=disable
+      - QUEUE_HOST=rabbitmq
+      - QUEUE_PORT=5672
+      - QUEUE_USER=guest
+      - QUEUE_PASS=guest
     ports:
       - "80:80"
     depends_on:
       - web-db
+      - rabbit-server
+      - rabbitmq
     links:
       - web-db
+      - rabbitmq
+
+  consumer:
+    container_name: 'consumer'
+    build: ./consumer
+    environment:
+      - SERVER_ADDR=web
+      - QUEUE_HOST=rabbitmq
+      - QUEUE_PORT=5672
+      - QUEUE_USER=guest
+      - QUEUE_PASS=guest
+    depends_on:
+      - rabbitmq
+      - web
+    links:
+      - web
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.9-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:15672" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   web-db:
-    container_name: web-db
+    container_name: 'web-db'
     image: postgres:12
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=pass
       - POSTGRES_DB=db
     ports:
-      - 5432:5432
+      - "5432:5432"
     volumes:
       - ./storage/postgresql/data:/var/lib/postgresql/data
     restart: unless-stopped
