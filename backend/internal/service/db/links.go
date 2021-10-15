@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v4"
 	"strconv"
 )
@@ -57,14 +58,36 @@ func (db *PgxCon) GetLinkById(id string) (*Link, error) {
 	return link, nil
 }
 
-func (db *PgxCon) AddLink(link Link) error {
+func (db *PgxCon) AddLink(link Link) (int, error) {
+	var id int
 	connCtx, cancel := context.WithTimeout(db.pgConnCtx, waitTimeout)
 	defer cancel()
 	tx, _ := db.pgConn.Begin(connCtx)
 
-	_, err := tx.Exec(connCtx, "INSERT INTO app_links (url) values($1)",
+	err := tx.QueryRow(connCtx, "INSERT INTO app_links (url)"+
+		" VALUES ($1) returning id",
 		link.URL,
-	)
+	).Scan(&id)
+
+	if err != nil {
+		tx.Rollback(connCtx)
+		return 0, err
+	}
+
+	tx.Commit(connCtx)
+	return id, nil
+}
+
+func (db *PgxCon) UpdateStatusLink(status int, id string) error {
+	connCtx, cancel := context.WithTimeout(db.pgConnCtx, waitTimeout)
+	defer cancel()
+	tx, _ := db.pgConn.Begin(connCtx)
+
+	cc, err := tx.Exec(connCtx, "UPDATE app_links SET status=$1 WHERE id=$2", status, id)
+
+	if cc.RowsAffected() <= 0 {
+		return fmt.Errorf(" не найдено строк по данному id:%d", id)
+	}
 
 	if err != nil {
 		tx.Rollback(connCtx)

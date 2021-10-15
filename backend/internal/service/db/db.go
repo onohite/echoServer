@@ -9,5 +9,7 @@ type DBService interface {
 	//Links
 	GetAllLinks() (*[]Link, error)
 	GetLinkById(id string) (*Link, error)
-	AddLink(link Link) error
+	AddLink(link Link) (int, error)
+	// UpdateStatusLink status - status of url , id - privary key
+	UpdateStatusLink(int, string) error
 }

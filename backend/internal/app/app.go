@@ -14,11 +14,11 @@ import (
 	"time"
 )
 
-// @title PetProject API
+// @title EchoProject REST API
 // @version 1.0
-// @description REST API for PetProject App
+// @description Server for CSU and self-improvement
 
-// @host localhost:8080
+// @host localhost:80
 // @BasePath /api/v1/
 
 // Run initializes whole application.

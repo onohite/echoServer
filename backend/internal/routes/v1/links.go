@@ -12,6 +12,7 @@ func (h *Handler) initLinksRoutes(api *echo.Group) {
 		links.GET("/", h.GetListLink)
 		links.GET("/:id", h.GetLink)
 		links.POST("/", h.AddLink)
+		links.PUT("/:id", h.UpdateLink)
 	}
 }
 
@@ -45,8 +46,36 @@ func (h Handler) AddLink(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	if err := h.Services.DB.AddLink(link); err != nil {
+	id, err := h.Services.DB.AddLink(link)
+	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	return c.NoContent(http.StatusOK)
+
+	err = h.Services.Queue.SetLinkStatus(id, link.URL)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, struct {
+		Id int `json:"id"`
+	}{Id: id})
+}
+
+func (h Handler) UpdateLink(c echo.Context) error {
+	req := &struct {
+		Status int `json:"status_code"`
+	}{}
+
+	id := c.Param("id")
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	err := h.Services.DB.UpdateStatusLink(req.Status, id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }

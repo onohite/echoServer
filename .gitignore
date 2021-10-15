@@ -22,6 +22,6 @@ vendor/
 storage/
 
 # ignore files in folder
-docs/*
+backend/docs/*
 # ...but keep docs.go
-!docs/docs.go
+!backend/docs/docs.go
