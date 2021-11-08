@@ -17,8 +17,6 @@ services:
       - QUEUE_PORT=5672
       - QUEUE_USER=guest
       - QUEUE_PASS=guest
-    ports:
-      - "8080:8080"
     depends_on:
       - web-db
       - rabbitmq
@@ -43,8 +41,6 @@ services:
       - QUEUE_PORT=5672
       - QUEUE_USER=guest
       - QUEUE_PASS=guest
-    ports:
-      - "8081:8081"
     depends_on:
       - web-db
       - rabbitmq
@@ -57,19 +53,20 @@ services:
     container_name: 'consumer'
     build: ./consumer
     environment:
-      - SERVER_ADDR=web
+      - SERVER_ADDR=nginx
       - QUEUE_HOST=rabbitmq
       - QUEUE_PORT=5672
       - QUEUE_USER=guest
       - QUEUE_PASS=guest
       - CACHE_HOST=web-cache
-      - CACHE-PORT=6379
+      - CACHE_PORT=6379
     depends_on:
       - rabbitmq
-      - web
+      - nginx
       - web-cache
     links:
-      - web
+      - nginx
+      - web-cache
     restart: unless-stopped
 
   rabbitmq:

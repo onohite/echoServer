@@ -1,10 +1,10 @@
 package routes
 
 import (
-	"echoTest/docs/docs"
-	"echoTest/internal/config"
-	v1 "echoTest/internal/routes/v1"
-	"echoTest/internal/service"
+	"backend/docs/docs"
+	"backend/internal/config"
+	v1 "backend/internal/routes/v1"
+	"backend/internal/service"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

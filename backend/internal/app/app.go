@@ -1,10 +1,10 @@
 package app
 
 import (
+	"backend/internal/config"
+	"backend/internal/routes"
+	"backend/internal/service"
 	"context"
-	"echoTest/internal/config"
-	"echoTest/internal/routes"
-	"echoTest/internal/service"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"

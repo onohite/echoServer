@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"echoTest/internal/service/db"
+	"backend/internal/service/db"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
@@ -17,7 +17,7 @@ func (h *Handler) initLinksRoutes(api *echo.Group) {
 }
 
 type Links struct {
-	Urls *[]db.Link `json:"Links"`
+	Urls *[]db.ResponseLink `json:"Links"`
 }
 
 func (h Handler) GetListLink(c echo.Context) error {

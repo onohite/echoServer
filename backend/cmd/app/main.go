@@ -1,6 +1,6 @@
 package main
 
-import "echoTest/internal/app"
+import "backend/internal/app"
 
 func main() {
 	app.Run()

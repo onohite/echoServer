@@ -1,8 +1,8 @@
 package db
 
 import (
+	"backend/internal/config"
 	"context"
-	"echoTest/internal/config"
 	"fmt"
 	"log"
 	"time"

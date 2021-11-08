@@ -1,4 +1,4 @@
-module echoTest
+module backend
 
 go 1.17
 
@@ -6,10 +6,9 @@ require (
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/labstack/echo/v4 v4.5.0
 	github.com/labstack/gommon v0.3.0
-	github.com/sirupsen/logrus v1.8.1
+	github.com/streadway/amqp v1.0.0
 	github.com/swaggo/echo-swagger v1.1.3
 	github.com/swaggo/swag v1.7.1
-	github.com/streadway/amqp v1.0.0 // indirect
 )
 
 require (
@@ -34,7 +33,6 @@ require (
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/streadway/amqp v1.0.0 // indirect
 	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect

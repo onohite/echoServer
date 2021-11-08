@@ -1,10 +1,10 @@
 package service
 
 import (
+	"backend/internal/config"
+	"backend/internal/service/db"
+	"backend/internal/service/queue"
 	"context"
-	"echoTest/internal/config"
-	"echoTest/internal/service/db"
-	"echoTest/internal/service/queue"
 	"github.com/labstack/gommon/log"
 )
 

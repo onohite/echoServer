@@ -1,8 +1,8 @@
 package queue
 
 import (
+	"backend/internal/config"
 	"context"
-	"echoTest/internal/config"
 	"fmt"
 	"github.com/streadway/amqp"
 	"log"

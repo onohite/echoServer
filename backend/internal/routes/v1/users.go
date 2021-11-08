@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"echoTest/internal/service/db"
+	"backend/internal/service/db"
 	"github.com/labstack/echo/v4"
 )
 

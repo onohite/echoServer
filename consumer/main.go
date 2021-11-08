@@ -1,8 +1,8 @@
 package main
 
 import (
-	"consmer/config"
-	"consmer/redis"
+	"consumer/config"
+	"consumer/redis"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,14 +10,14 @@ import (
 	"github.com/streadway/amqp"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 )
 
 const (
-	updateLinks = "http://%s/api/v1/links/%d"
-	TTL         = time.Hour * 2
+	updateLinks    = "http://%s/api/v1/links/%d"
+	foundRedisText = "found URL: %s STATUS_CODE: %d IN REDIS"
+	answerText     = "URL: %s STATUS_CODE: %d"
+	waitingReqMsg  = " [*] Waiting for messages."
 )
 
 type ReqLink struct {
@@ -41,6 +41,10 @@ func main() {
 	}
 	defer ch.Close()
 
+	if err := ch.ExchangeDeclare("linker", "direct", false, true, false, false, nil); err != nil {
+		log.Fatalln(err)
+	}
+
 	q, err := ch.QueueDeclare(
 		"link-status", // name
 		false,         // durable
@@ -51,6 +55,16 @@ func main() {
 	)
 	if err != nil {
 		log.Fatalln(err)
+	}
+
+	if err = ch.QueueBind(
+		"link-status", // name of the queue
+		"123",         // bindingKey
+		"linker",      // sourceExchange
+		false,         // noWait
+		nil,           // arguments
+	); err != nil {
+		log.Fatalf("Queue Bind: %s", err)
 	}
 
 	msgs, err := ch.Consume(
@@ -76,14 +90,19 @@ func main() {
 				log.Println(err)
 				continue
 			}
-			cacheStatus, err := CheckCacheStatus(cfg, ctx, reqLink.URL)
+			redisService := redis.CacheDB{}
+			redisService.InitCache(cfg)
+			cacheStatus, err := redisService.CheckCacheStatus(cfg, ctx, reqLink.URL)
 			if err != nil {
+				log.Println(err)
 				cacheStatus = GetUrlStatus(reqLink.URL)
-				err := AddCacheStatus(cfg, ctx, reqLink.URL, cacheStatus)
+				err := redisService.AddCacheStatus(cfg, ctx, reqLink.URL, cacheStatus)
 				if err != nil {
 					log.Println(err)
 					continue
 				}
+			} else {
+				log.Printf(foundRedisText, reqLink.URL, cacheStatus)
 			}
 
 			err = SendUpdateLinkRequest(reqLink.ID, cacheStatus, cfg)
@@ -91,41 +110,16 @@ func main() {
 				log.Println(err)
 				continue
 			}
-			log.Printf("URL: %s STATUS_CODE: %d", reqLink.URL, cacheStatus)
+			log.Printf(answerText, reqLink.URL, cacheStatus)
 		}
 	}()
 
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	log.Printf(waitingReqMsg)
 	<-forever
 }
 
-func CheckCacheStatus(cfg *config.Config, ctx context.Context, uri string) (int, error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	var cache redis.CacheDB
-	cache.InitCache(cfg)
-	result, err := cache.CacheConn.Get(ctx, uri).Result()
-	if err != nil {
-		return 0, err
-	}
-	status, _ := strconv.Atoi(result)
-	return status, nil
-}
-
-func AddCacheStatus(cfg *config.Config, ctx context.Context, uri string, status int) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	var cache redis.CacheDB
-	cache.InitCache(cfg)
-	err := cache.CacheConn.Set(ctx, uri, status, TTL).Err()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func GetUrlStatus(url string) int {
-	if !strings.Contains("url", "http") && !strings.Contains("url", "https") {
+	if !strings.Contains(url, "http") || !strings.Contains(url, "https") {
 		url = fmt.Sprintf("http://%s", url)
 	}
 	cl := resty.New()

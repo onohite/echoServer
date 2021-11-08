@@ -7,8 +7,8 @@ type DBService interface {
 	GetAllUsers() (*[]User, error)
 
 	//Links
-	GetAllLinks() (*[]Link, error)
-	GetLinkById(id string) (*Link, error)
+	GetAllLinks() (*[]ResponseLink, error)
+	GetLinkById(id string) (*ResponseLink, error)
 	AddLink(link Link) (int, error)
 	// UpdateStatusLink status - status of url , id - privary key
 	UpdateStatusLink(int, string) error
