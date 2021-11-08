@@ -1,7 +1,9 @@
 package main
 
 import (
-	"consmer/config"
+	"consumer/config"
+	"consumer/redis"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
@@ -11,7 +13,12 @@ import (
 	"strings"
 )
 
-const updateLinks = "http://%s/api/v1/links/%d"
+const (
+	updateLinks    = "http://%s/api/v1/links/%d"
+	foundRedisText = "found URL: %s STATUS_CODE: %d IN REDIS"
+	answerText     = "URL: %s STATUS_CODE: %d"
+	waitingReqMsg  = " [*] Waiting for messages."
+)
 
 type ReqLink struct {
 	ID  int    `json:"id"`
@@ -22,6 +29,7 @@ func main() {
 	cfg := config.Init()
 
 	conn, err := amqp.Dial(cfg.QueueAdress)
+	ctx := context.Background()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -33,6 +41,10 @@ func main() {
 	}
 	defer ch.Close()
 
+	if err := ch.ExchangeDeclare("linker", "direct", false, true, false, false, nil); err != nil {
+		log.Fatalln(err)
+	}
+
 	q, err := ch.QueueDeclare(
 		"link-status", // name
 		false,         // durable
@@ -43,6 +55,16 @@ func main() {
 	)
 	if err != nil {
 		log.Fatalln(err)
+	}
+
+	if err = ch.QueueBind(
+		"link-status", // name of the queue
+		"123",         // bindingKey
+		"linker",      // sourceExchange
+		false,         // noWait
+		nil,           // arguments
+	); err != nil {
+		log.Fatalf("Queue Bind: %s", err)
 	}
 
 	msgs, err := ch.Consume(
@@ -68,23 +90,36 @@ func main() {
 				log.Println(err)
 				continue
 			}
-			status := GetUrlStatus(reqLink.URL)
+			redisService := redis.CacheDB{}
+			redisService.InitCache(cfg)
+			cacheStatus, err := redisService.CheckCacheStatus(cfg, ctx, reqLink.URL)
+			if err != nil {
+				log.Println(err)
+				cacheStatus = GetUrlStatus(reqLink.URL)
+				err := redisService.AddCacheStatus(cfg, ctx, reqLink.URL, cacheStatus)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+			} else {
+				log.Printf(foundRedisText, reqLink.URL, cacheStatus)
+			}
 
-			err, status = SendUpdateLinkRequest(reqLink.ID, status, cfg)
+			err = SendUpdateLinkRequest(reqLink.ID, cacheStatus, cfg)
 			if err != nil {
 				log.Println(err)
 				continue
 			}
-			log.Printf("URL: %s STATUS_CODE: %d", reqLink.URL, status)
+			log.Printf(answerText, reqLink.URL, cacheStatus)
 		}
 	}()
 
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	log.Printf(waitingReqMsg)
 	<-forever
 }
 
 func GetUrlStatus(url string) int {
-	if !strings.Contains("url", "http") && !strings.Contains("url", "https") {
+	if !strings.Contains(url, "http") || !strings.Contains(url, "https") {
 		url = fmt.Sprintf("http://%s", url)
 	}
 	cl := resty.New()
@@ -96,7 +131,7 @@ func GetUrlStatus(url string) int {
 	return resp.StatusCode()
 }
 
-func SendUpdateLinkRequest(id int, status int, cfg *config.Config) (error, int) {
+func SendUpdateLinkRequest(id int, status int, cfg *config.Config) error {
 	adress := fmt.Sprintf(updateLinks, cfg.ServerAdress, id)
 	client := resty.New()
 	_, err := client.R().SetBody(struct {
@@ -104,7 +139,7 @@ func SendUpdateLinkRequest(id int, status int, cfg *config.Config) (error, int) 
 	}{status},
 	).Put(adress)
 	if err != nil {
-		return err, 0
+		return err
 	}
-	return nil, status
+	return nil
 }

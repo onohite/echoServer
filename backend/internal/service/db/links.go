@@ -12,10 +12,17 @@ type Link struct {
 	URL string `json:"url"`
 }
 
-func (db *PgxCon) GetAllLinks() (*[]Link, error) {
+type ResponseLink struct {
+	ID     int    `json:"id"`
+	URL    string `json:"url"`
+	Status int    `json:"status"`
+}
+
+func (db *PgxCon) GetAllLinks() (*[]ResponseLink, error) {
 	var rows pgx.Rows
 	var id int
 	var url string
+	var status int
 
 	connCtx, cancel := context.WithTimeout(context.Background(), waitTimeout)
 	defer cancel()
@@ -27,35 +34,37 @@ func (db *PgxCon) GetAllLinks() (*[]Link, error) {
 	}
 	defer rows.Close()
 
-	links := make([]Link, 0)
+	links := make([]ResponseLink, 0)
 	for rows.Next() {
-		err = rows.Scan(&id, &url)
+		err = rows.Scan(&id, &url, &status)
 		if err != nil {
 			return nil, err
 		}
-		links = append(links, Link{id, url})
+		links = append(links, ResponseLink{id, url, status})
 	}
 
 	return &links, nil
 }
 
-func (db *PgxCon) GetLinkById(id string) (*Link, error) {
+func (db *PgxCon) GetLinkById(id string) (*ResponseLink, error) {
 	var url string
+	var status int
 
 	connCtx, cancel := context.WithTimeout(db.pgConnCtx, waitTimeout)
 	defer cancel()
 
-	err := db.pgConn.QueryRow(connCtx, "SELECT url FROM app_links WHERE id=$1", id).
-		Scan(&url)
+	err := db.pgConn.QueryRow(connCtx, "SELECT url,status FROM app_links WHERE id=$1", id).
+		Scan(&url, &status)
 	if err != nil {
 		return nil, err
 	}
 	s, _ := strconv.Atoi(id)
-	link := &Link{
-		ID:  s,
-		URL: url,
+	link := ResponseLink{
+		ID:     s,
+		URL:    url,
+		Status: status,
 	}
-	return link, nil
+	return &link, nil
 }
 
 func (db *PgxCon) AddLink(link Link) (int, error) {
