@@ -24,31 +24,6 @@ services:
       - web-db
       - rabbitmq
 
-  web-copy:
-    container_name: 'web-copy'
-    build: ./backend
-    environment:
-      - SERVER_MODE=dev
-      - HOST=0.0.0.0
-      - PORT=8081
-      - DBUSER=user
-      - DBPASSWORD=pass
-      - DBNAME=db
-      - DBHOST=web-db
-      - DBPORT=5432
-      - DBSSLMODE=disable
-      - QUEUE_HOST=rabbitmq
-      - QUEUE_PORT=5672
-      - QUEUE_USER=guest
-      - QUEUE_PASS=guest
-    depends_on:
-      - web-db
-      - rabbitmq
-    links:
-      - web-db
-      - rabbitmq
-
-
   consumer:
     container_name: 'consumer'
     build: ./consumer
@@ -112,10 +87,8 @@ services:
     # It will start up the nginx only when all api containers have started
     depends_on:
       - web
-      - web-copy
     # Connects the port 80 of the nginx container to localhost:80 or localhost
     ports:
       - "80:80"
     links:
       - web
-      - web-copy

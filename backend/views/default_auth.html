@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>MVP-INTERNET-TECHNOLOGY</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-social/5.1.1/bootstrap-social.css"/>
+    <script src="https://kit.fontawesome.com/14f91192f0.js" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
+            crossorigin="anonymous"></script>
+</head>
+
+
+<body>
+<div class="container-fluid h-100">
+    <div class="row justify-content-center align-items-center h-100">
+        <h3 class="text-center">{{.}}</h3>
+        <div class="col col-sm-6 col-md-6 col-lg-4 col-xl-1">
+            <div class="g-2">
+                <form action="/oauth/login" method="GET">
+                    <div class="form-group p-2 d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-vk">
+                            <span class="fa fa-vk"></span>
+                        </button>
+                    </div>
+                </form>
+                <form action="/oauth/login" method="GET">
+                    <div class="form-group p-2 d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-facebook">
+                            <span class="fa fa-facebook"></span>
+                        </button>
+                    </div>
+                </form>
+                <form action="/oauth/login" method="GET">
+                    <div class="form-group p-2 d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-google">
+                            <span class="fa fa-google"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+</body>
+</html>

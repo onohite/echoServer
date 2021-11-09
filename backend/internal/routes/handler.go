@@ -3,9 +3,11 @@ package routes
 import (
 	"backend/docs/docs"
 	"backend/internal/config"
+	"backend/internal/routes/oauth"
 	v1 "backend/internal/routes/v1"
 	"backend/internal/service"
 	"fmt"
+	"github.com/foolin/goview/supports/echoview-v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -23,6 +25,7 @@ func NewHandler(service *service.Service) *Handler {
 func (h *Handler) Init(cfg *config.Config) *echo.Echo {
 	// Init echo handler
 	router := echo.New()
+	router.Renderer = echoview.Default()
 
 	// Init middleware
 	router.Use(
@@ -49,6 +52,7 @@ func (h *Handler) Init(cfg *config.Config) *echo.Echo {
 	})
 
 	h.initAPI(router)
+	h.oauthAPI(router)
 
 	return router
 }
@@ -58,5 +62,13 @@ func (h *Handler) initAPI(router *echo.Echo) {
 	api := router.Group("/api")
 	{
 		handlerV1.Init(api)
+	}
+}
+
+func (h *Handler) oauthAPI(router *echo.Echo) {
+	handlerOauth := oauth.NewHandler(h.Services)
+	api := router.Group("/oauth")
+	{
+		handlerOauth.Init(api)
 	}
 }
