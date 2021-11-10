@@ -2,38 +2,41 @@ package db
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
 )
 
 type User struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
+	Name       string
+	Email      string
+	AvatarLink string
+	Sex        int
+	Bdate      string
+	Unique     string
 }
 
-func (db *PgxCon) GetAllUsers() (*[]User, error) {
-	var rows pgx.Rows
-	var id int
-	var name string
-
+func (db *PgxCon) AddUser(u User) (string, error) {
 	connCtx, cancel := context.WithTimeout(context.Background(), waitTimeout)
 	defer cancel()
-	rows, err := db.pgConn.Query(connCtx,
-		"SELECT id,name FROM app_user")
+	var id string
+
+	_ = db.pgConn.QueryRow(connCtx, "SELECT id from users WHERE unique_identificator=$1", u.Unique).Scan(&id)
+	if id != "" {
+		return id, nil
+	}
+
+	tx, _ := db.pgConn.Begin(connCtx)
+	err := tx.QueryRow(connCtx,
+		"INSERT INTO Users (user_name,email,avatar_link,sex,bdate,unique_identificator) VALUES ($1,$2,$3,$4,$5,$6) returning id",
+		u.Name, u.Email, u.AvatarLink, u.Sex, u.Bdate, u.Unique).Scan(&id)
 
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	defer rows.Close()
-
-	users := make([]User, 0, 10)
-	for rows.Next() {
-		err = rows.Scan(&id, &name)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, User{id, name})
+	if err != nil {
+		tx.Rollback(connCtx)
+		return "", err
 	}
 
-	return &users, nil
+	tx.Commit(connCtx)
+	return id, nil
 }

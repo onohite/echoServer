@@ -2,6 +2,7 @@ package service
 
 import (
 	"backend/internal/config"
+	"backend/internal/service/cache"
 	"backend/internal/service/db"
 	"backend/internal/service/queue"
 	"context"
@@ -11,6 +12,7 @@ import (
 type Service struct {
 	DB    db.DBService
 	Queue queue.QueueService
+	Cache cache.CacheService
 }
 
 func InitService(ctx context.Context, cfg *config.Config) (*Service, error) {
@@ -19,6 +21,9 @@ func InitService(ctx context.Context, cfg *config.Config) (*Service, error) {
 		return nil, err
 	}
 	if err := service.initQueue(ctx, cfg); err != nil {
+		return nil, err
+	}
+	if err := service.initCache(ctx, cfg); err != nil {
 		return nil, err
 	}
 	log.Info("All services are up")
@@ -42,5 +47,15 @@ func (s *Service) initQueue(ctx context.Context, cfg *config.Config) error {
 	}
 	s.Queue = queueService
 	log.Info("Queue connection complete successful")
+	return nil
+}
+
+func (s *Service) initCache(ctx context.Context, cfg *config.Config) error {
+	cacheService, err := cache.InitCache(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	s.Cache = cacheService
+	log.Info("Cache connection complete successful")
 	return nil
 }

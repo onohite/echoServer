@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	defaultDNS        = ""
 	defaultHTTPPort   = "80"
 	defaultHost       = ""
 	Prod              = "prod"
@@ -21,6 +22,8 @@ const (
 	defaultQuPort     = "5672"
 	defaultQuUser     = "guest"
 	defaultQuPass     = "guest"
+	defaultCacheHost  = "web-cache"
+	defaultCachePort  = "6380"
 )
 
 type Config struct {
@@ -29,6 +32,8 @@ type Config struct {
 	ServerMode     string
 	PostgresAdress string
 	QueueAdress    string
+	CacheAdress    string
+	Dns            string
 	AuthType       AuthType
 }
 
@@ -44,6 +49,11 @@ type AuthConfig struct {
 }
 
 func Init() *Config {
+	dns, ok := os.LookupEnv("DNS_SERVER")
+	if !ok {
+		dns = defaultDNS
+	}
+
 	serverMode, ok := os.LookupEnv("SERVER_MODE")
 	if !ok {
 		serverMode = Dev
@@ -109,6 +119,16 @@ func Init() *Config {
 		QuPass = defaultQuPass
 	}
 
+	var CHost string
+	if CHost, ok = os.LookupEnv("CACHE_HOST"); !ok {
+		CHost = defaultCacheHost
+	}
+
+	var CPort string
+	if CPort, ok = os.LookupEnv("CACHE_PORT"); !ok {
+		CPort = defaultCachePort
+	}
+
 	var VKClientID string
 	if VKClientID, ok = os.LookupEnv("VK_CLIENT_ID"); !ok {
 		log.Fatal("empty VK_CLIENT_ID")
@@ -158,6 +178,7 @@ func Init() *Config {
 	postgresAddr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		DbHost, DbPort, DbUser, DbPassword, DbName, DbSslMode)
 	queueAddress := fmt.Sprintf("amqp://%s:%s@%s:%s/", QuUser, QuPass, QuHost, QuPort)
+	cacheAdress := fmt.Sprintf("%s:%s", CHost, CPort)
 
-	return &Config{host, port, serverMode, postgresAddr, queueAddress, authType}
+	return &Config{host, port, serverMode, postgresAddr, queueAddress, cacheAdress, dns, authType}
 }

@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -18,19 +19,21 @@ import (
 const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
 
 type Handler struct {
-	Services *service.Service
-	cfg      *oauth2.Config
+	Services  *service.Service
+	cfg       *oauth2.Config
+	cfgServer *config.Config
 }
 
-func NewHandler(services *service.Service, cfg *config.AuthConfig) *Handler {
+func NewHandler(services *service.Service, cfg *config.Config) *Handler {
+
 	authCfg := oauth2.Config{
-		ClientID:     cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
-		RedirectURL:  "https://2b60-109-191-92-239.ngrok.io/oauth/google/redirect",
+		ClientID:     cfg.AuthType.GoogleConfig.ClientID,
+		ClientSecret: cfg.AuthType.GoogleConfig.ClientSecret,
+		RedirectURL:  fmt.Sprintf("%s/oauth/google/redirect", cfg.Dns),
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint:     google.Endpoint,
 	}
-	return &Handler{services, &authCfg}
+	return &Handler{services, &authCfg, cfg}
 }
 
 func (h Handler) Init(api *echo.Group) {
@@ -47,7 +50,6 @@ func (h Handler) Login(c echo.Context) error {
 	c.SetCookie(&cookie)
 	http.SetCookie(c.Response().Writer, &cookie)
 	u := h.cfg.AuthCodeURL(state)
-	//url := fmt.Sprintf("https://oauth.vk.com/authorize?client_id=%s&redirect_uri=%s&display=%s&scope=%s&response_type=code&state=%s", clientID, redirectURI, "mobile", scopeTemp, state)
 	return c.Redirect(302, u)
 }
 
@@ -89,8 +91,6 @@ func (h Handler) Redirect(c echo.Context) error {
 		return err
 	}
 
-	//fields := strings.Join([]string{"bdate", "city", "county", "sex", "games", "photo_400_orig"}, ",")
-	//url := fmt.Sprintf("https://api.vk.com/method/%s?v=5.124&fields=%s&access_token=%s", "users.get", fields, token.AccessToken)
 	url := oauthGoogleUrlAPI + token.AccessToken
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -101,11 +101,10 @@ func (h Handler) Redirect(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")
 	}
 	defer resp.Body.Close()
-	_, err = ioutil.ReadAll(resp.Body)
+	bytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")
 	}
 
-	return c.Redirect(302, "https://2b60-109-191-92-239.ngrok.io/oauth/register")
-	//return c.JSONBlob(200, bytes)
+	return c.JSONBlob(200, bytes)
 }

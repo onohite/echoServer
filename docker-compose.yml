@@ -19,11 +19,15 @@ services:
       - QUEUE_PORT=5672
       - QUEUE_USER=guest
       - QUEUE_PASS=guest
+      - CACHE_HOST=web-cache
+      - CACHE_PORT=6379
     depends_on:
       - web-db
+      - web-cache
       - rabbitmq
     links:
       - web-db
+      - web-cache
       - rabbitmq
 
   consumer:
