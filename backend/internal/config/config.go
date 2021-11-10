@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -28,6 +29,18 @@ type Config struct {
 	ServerMode     string
 	PostgresAdress string
 	QueueAdress    string
+	AuthType       AuthType
+}
+
+type AuthType struct {
+	VKconfig      AuthConfig
+	DiscordConfig AuthConfig
+	GoogleConfig  AuthConfig
+}
+
+type AuthConfig struct {
+	ClientID     string
+	ClientSecret string
 }
 
 func Init() *Config {
@@ -96,9 +109,55 @@ func Init() *Config {
 		QuPass = defaultQuPass
 	}
 
+	var VKClientID string
+	if VKClientID, ok = os.LookupEnv("VK_CLIENT_ID"); !ok {
+		log.Fatal("empty VK_CLIENT_ID")
+	}
+
+	var VKClientSecret string
+	if VKClientSecret, ok = os.LookupEnv("VK_CLIENT_SECRET"); !ok {
+		log.Fatal("empty VK_CLIENT_SECRET")
+	}
+
+	vkCFG := AuthConfig{
+		ClientID:     VKClientID,
+		ClientSecret: VKClientSecret,
+	}
+
+	var GoogleClientID string
+	if GoogleClientID, ok = os.LookupEnv("GOOGLE_CLIENT_ID"); !ok {
+		log.Fatal("empty GOOGLE_CLIENT_ID")
+	}
+
+	var GoogleClientSecret string
+	if GoogleClientSecret, ok = os.LookupEnv("GOOGLE_CLIENT_SECRET"); !ok {
+		log.Fatal("empty GOOGLE_CLIENT_SECRET")
+	}
+
+	googleCFG := AuthConfig{
+		ClientID:     GoogleClientID,
+		ClientSecret: GoogleClientSecret,
+	}
+
+	var DiscordClientID string
+	if DiscordClientID, ok = os.LookupEnv("DISCORD_CLIENT_ID"); !ok {
+		log.Fatal("empty DISCORD_CLIENT_ID")
+	}
+
+	var DiscordClientSecret string
+	if DiscordClientSecret, ok = os.LookupEnv("DISCORD_CLIENT_SECRET"); !ok {
+		log.Fatal("empty DISCORD_CLIENT_SECRET")
+	}
+
+	discordCFG := AuthConfig{
+		ClientID:     DiscordClientID,
+		ClientSecret: DiscordClientSecret,
+	}
+	authType := AuthType{vkCFG, discordCFG, googleCFG}
+
 	postgresAddr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		DbHost, DbPort, DbUser, DbPassword, DbName, DbSslMode)
 	queueAddress := fmt.Sprintf("amqp://%s:%s@%s:%s/", QuUser, QuPass, QuHost, QuPort)
 
-	return &Config{host, port, serverMode, postgresAddr, queueAddress}
+	return &Config{host, port, serverMode, postgresAddr, queueAddress, authType}
 }

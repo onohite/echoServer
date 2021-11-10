@@ -33,7 +33,7 @@ func Run() {
 	if err != nil {
 		log.Panic(err)
 	}
-	handler := routes.NewHandler(services)
+	handler := routes.NewHandler(services, &cfg.AuthType)
 
 	go func(srv *echo.Echo) {
 		if err := srv.Start(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)); err != nil {

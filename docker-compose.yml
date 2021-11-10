@@ -3,6 +3,8 @@ services:
   web:
     container_name: 'web'
     build: ./backend
+    env_file:
+      - ./backend/.env
     environment:
       - SERVER_MODE=dev
       - HOST=0.0.0.0

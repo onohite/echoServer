@@ -16,10 +16,11 @@ import (
 
 type Handler struct {
 	Services *service.Service
+	AuthType *config.AuthType
 }
 
-func NewHandler(service *service.Service) *Handler {
-	return &Handler{service}
+func NewHandler(service *service.Service, cfg *config.AuthType) *Handler {
+	return &Handler{service, cfg}
 }
 
 func (h *Handler) Init(cfg *config.Config) *echo.Echo {
@@ -66,7 +67,7 @@ func (h *Handler) initAPI(router *echo.Echo) {
 }
 
 func (h *Handler) oauthAPI(router *echo.Echo) {
-	handlerOauth := oauth.NewHandler(h.Services)
+	handlerOauth := oauth.NewHandler(h.Services, h.AuthType)
 	api := router.Group("/oauth")
 	{
 		handlerOauth.Init(api)
