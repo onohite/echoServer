@@ -13,3 +13,8 @@ func GenerateKey(keys ...string) string {
 	secKey := []byte(key)
 	return fmt.Sprintf("%x", md5.Sum(secKey))
 }
+
+type ErrorStruct struct {
+	Message string `json:"message"`
+	Detail  string `json:"detail"`
+}

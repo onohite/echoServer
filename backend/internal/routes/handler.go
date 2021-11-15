@@ -7,8 +7,10 @@ import (
 	"backend/internal/routes/oauth"
 	v1 "backend/internal/routes/v1"
 	"backend/internal/service"
+	"errors"
 	"fmt"
 	"github.com/foolin/goview/supports/echoview-v4"
+	"github.com/go-playground/validator"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -26,11 +28,23 @@ func NewHandler(service *service.Service, cfg *config.Config) *Handler {
 	return &Handler{service, cfg}
 }
 
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	if err := cv.validator.Struct(i); err != nil {
+		// Optionally, you could return the error to give each route more control over the status code
+		return errors.New("validate error")
+	}
+	return nil
+}
+
 func (h *Handler) Init(cfg *config.Config) *echo.Echo {
 	// Init echo handler
 	router := echo.New()
 	router.Renderer = echoview.Default()
-
+	router.Validator = &CustomValidator{validator: validator.New()}
 	// Init middleware
 	router.Use(
 		middleware.LoggerWithConfig(middleware.LoggerConfig{
@@ -67,7 +81,7 @@ func (h *Handler) index(c echo.Context) error {
 	sess, _ := session.Get("session", c)
 	uuid, ok := sess.Values["uuid"].(string)
 	if uuid == "" || !ok {
-		return c.Redirect(http.StatusFound, fmt.Sprintf("%s/oauth", h.cfg.Dns))
+		return c.JSON(http.StatusUnauthorized, "access denied")
 	} else {
 		return c.JSON(http.StatusOK, "authorized")
 	}

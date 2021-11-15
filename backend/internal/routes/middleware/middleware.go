@@ -3,10 +3,12 @@ package middleware
 import (
 	"backend/internal/routes/oauth"
 	"backend/internal/service"
+	"fmt"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"log"
+	"net/http"
 )
 
 func JWTMiddleware(service *service.Service) echo.MiddlewareFunc {
@@ -15,12 +17,12 @@ func JWTMiddleware(service *service.Service) echo.MiddlewareFunc {
 			token, err := oauth.ExtractTokenMetadata(c.Request())
 			if err != nil {
 				log.Println("unauthorized MIDDLEWARE close conn/cant extract token")
-				return next(c)
+				return c.JSON(http.StatusUnauthorized, fmt.Sprintf("access denied %v", err))
 			}
 			uuid, err := oauth.FetchAuth(service, token)
 			if err != nil {
 				log.Println("unauthorized MIDDLEWARE close conn/cant extract uuid")
-				return next(c)
+				return c.JSON(http.StatusUnauthorized, fmt.Sprintf("access denied %v", err))
 			}
 			sess, _ := session.Get("session", c)
 			sess.Options = &sessions.Options{

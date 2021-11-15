@@ -3,17 +3,21 @@ package google
 import (
 	"backend/internal/config"
 	"backend/internal/service"
+	"backend/internal/service/db"
+	"backend/internal/utils"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"github.com/go-resty/resty/v2"
+	"github.com/gorilla/sessions"
+	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 )
 
 const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
@@ -45,31 +49,35 @@ func (h Handler) Init(api *echo.Group) {
 }
 
 func (h Handler) Login(c echo.Context) error {
-	cookie, state := generateStateOauthCookie()
+	cookie, state := generateStateOauthCookie(&c)
+	if err := cookie.Save(c.Request(), c.Response()); err != nil {
+		return err
+	}
 
-	c.SetCookie(&cookie)
-	http.SetCookie(c.Response().Writer, &cookie)
 	u := h.cfg.AuthCodeURL(state)
 	return c.Redirect(302, u)
 }
 
-func generateStateOauthCookie() (http.Cookie, string) {
-	var expiration = time.Now().Add(5 * time.Minute)
+func generateStateOauthCookie(c *echo.Context) (*sessions.Session, string) {
+	sess, _ := session.Get("session", *c)
+	sess.Options = &sessions.Options{
+		Path:     "/oauth/google/redirect",
+		MaxAge:   60 * 60 * 5,
+		HttpOnly: false,
+	}
 
 	b := make([]byte, 16)
 	rand.Read(b)
 	state := base64.URLEncoding.EncodeToString(b)
-	cookie := http.Cookie{Name: "session", Value: state, Expires: expiration}
-
-	return cookie, state
+	sess.Values["state"] = state
+	return sess, state
 }
 
 func (h Handler) Redirect(c echo.Context) error {
-	checkCook, _ := c.Request().Cookie("session")
-	log.Println(checkCook)
-	cookie, err := c.Cookie("session")
-	if err != nil {
-		return err
+	sess, _ := session.Get("session", c)
+	state, ok := sess.Values["state"].(string)
+	if !ok {
+		return c.JSON(http.StatusBadRequest, "state error unauthorized")
 	}
 
 	stateTemp := c.QueryParam("state")
@@ -78,9 +86,16 @@ func (h Handler) Redirect(c echo.Context) error {
 	}
 	if stateTemp == "" {
 		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")
-	} else if stateTemp != cookie.Value {
+	} else if stateTemp != state {
 		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")
 	}
+
+	sess.Options.MaxAge = -1
+	err := sess.Save(c.Request(), c.Response())
+	if err != nil {
+		log.Print("cant delete session")
+	}
+
 	code := c.QueryParam("code")
 	if code == "" {
 		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")
@@ -92,19 +107,37 @@ func (h Handler) Redirect(c echo.Context) error {
 	}
 
 	url := oauthGoogleUrlAPI + token.AccessToken
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")
-	}
-	defer resp.Body.Close()
-	bytes, err := ioutil.ReadAll(resp.Body)
+	resp, err := resty.New().R().Get(url)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")
 	}
 
-	return c.JSONBlob(200, bytes)
+	var googleResp GoogleResp
+	if err := json.Unmarshal(resp.Body(), &googleResp); err != nil {
+		return c.JSON(http.StatusUnauthorized, "ошибка маршалинга google")
+	}
+
+	uniqueKey := utils.GenerateKey(googleResp.Name, googleResp.ID)
+	log.Println(uniqueKey)
+	user := db.User{
+		Name:       googleResp.Name,
+		AvatarLink: googleResp.Picture,
+		Email:      googleResp.Email,
+		Unique:     uniqueKey,
+	}
+
+	uuid, err := h.Services.DB.AddUser(user)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	log.Println(uuid)
+
+	resp, err = resty.New().R().SetBody(uuid).Post(fmt.Sprintf("%s/oauth/login", h.cfgServer.Dns))
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	return c.JSONBlob(200, resp.Body())
 }

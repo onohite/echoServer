@@ -48,7 +48,7 @@ func (h Handler) Init(api *echo.Group) {
 }
 
 func (h Handler) Login(c echo.Context) error {
-	cookie, state := generateStateOauthCookie(c)
+	cookie, state := generateStateOauthCookie(&c)
 	if err := cookie.Save(c.Request(), c.Response()); err != nil {
 		return err
 	}
@@ -58,10 +58,10 @@ func (h Handler) Login(c echo.Context) error {
 	return c.Redirect(302, u)
 }
 
-func generateStateOauthCookie(c echo.Context) (*sessions.Session, string) {
-	sess, _ := session.Get("session", c)
+func generateStateOauthCookie(c *echo.Context) (*sessions.Session, string) {
+	sess, _ := session.Get("session", *c)
 	sess.Options = &sessions.Options{
-		Path:     "/",
+		Path:     "/oauth/vk/redirect",
 		MaxAge:   60 * 60 * 5,
 		HttpOnly: false,
 	}
@@ -75,8 +75,10 @@ func generateStateOauthCookie(c echo.Context) (*sessions.Session, string) {
 
 func (h Handler) Redirect(c echo.Context) error {
 	sess, _ := session.Get("session", c)
-
-	log.Println(sess.Values["state"].(string))
+	state, ok := sess.Values["state"].(string)
+	if !ok {
+		return c.JSON(http.StatusBadRequest, "state error unauthorized")
+	}
 
 	stateTemp := c.QueryParam("state")
 	if stateTemp[len(stateTemp)-1] == '}' {
@@ -84,9 +86,16 @@ func (h Handler) Redirect(c echo.Context) error {
 	}
 	if stateTemp == "" {
 		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")
-	} else if stateTemp != sess.Values["state"].(string) {
+	} else if stateTemp != state {
 		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")
 	}
+
+	sess.Options.MaxAge = -1
+	err := sess.Save(c.Request(), c.Response())
+	if err != nil {
+		log.Print("cant delete session")
+	}
+
 	code := c.QueryParam("code")
 	if code == "" {
 		return c.JSON(http.StatusUnauthorized, "ошибка авторизации")

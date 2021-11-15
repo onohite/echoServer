@@ -3,6 +3,7 @@ package cache
 import (
 	"backend/internal/config"
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/go-redis/redis/v8"
 	"strconv"
@@ -44,6 +45,22 @@ func (r RedisDB) Set(key string, value interface{}, ttl time.Duration) error {
 	return nil
 }
 
+func (r RedisDB) SetData(key string, value interface{}, ttl time.Duration) error {
+	ctx, cancel := context.WithCancel(r.cacheCtx)
+	defer cancel()
+
+	zvalue, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	err = r.CacheConn.Set(ctx, key, zvalue, ttl).Err()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r RedisDB) Get(key string) (string, error) {
 	ctx, cancel := context.WithCancel(r.cacheCtx)
 	defer cancel()
@@ -55,6 +72,20 @@ func (r RedisDB) Get(key string) (string, error) {
 		return "", errors.New("empty redis get")
 	}
 	return resp, nil
+}
+
+func (r RedisDB) GetData(key string, data interface{}) error {
+	ctx, cancel := context.WithCancel(r.cacheCtx)
+	defer cancel()
+	resp, err := r.CacheConn.Get(ctx, key).Bytes()
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(resp, data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r RedisDB) Del(key ...string) (int64, error) {
