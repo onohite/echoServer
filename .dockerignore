@@ -3,3 +3,4 @@ Dockerfile
 docker-compose.yml
 *.txt
 storage
+graph-storage

@@ -5,6 +5,10 @@ import (
 	"fmt"
 )
 
+const (
+	DataLayout = "02.01.2006"
+)
+
 func GenerateKey(keys ...string) string {
 	var key string
 	for _, value := range keys {

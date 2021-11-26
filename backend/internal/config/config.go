@@ -7,23 +7,25 @@ import (
 )
 
 const (
-	defaultDNS        = ""
-	defaultHTTPPort   = "80"
-	defaultHost       = ""
-	Prod              = "prod"
-	Dev               = "dev"
-	defaultPostgreSQL = "10.80.32.66"
-	defaultDBPort     = "5432"
-	defaultDSSLMode   = "disable"
-	defaultDBuser     = "user"
-	defaultDBpass     = "pass"
-	defaultDBname     = "db"
-	defaultQuHost     = "10.80.32.66"
-	defaultQuPort     = "5672"
-	defaultQuUser     = "guest"
-	defaultQuPass     = "guest"
-	defaultCacheHost  = "web-cache"
-	defaultCachePort  = "6380"
+	defaultDNS          = ""
+	defaultHTTPPort     = "80"
+	defaultHost         = ""
+	Prod                = "prod"
+	Dev                 = "dev"
+	defaultPostgreSQL   = "10.80.32.66"
+	defaultDBPort       = "5432"
+	defaultDSSLMode     = "disable"
+	defaultDBuser       = "user"
+	defaultDBpass       = "pass"
+	defaultDBname       = "db"
+	defaultQuHost       = "10.80.32.66"
+	defaultQuPort       = "5672"
+	defaultQuUser       = "guest"
+	defaultQuPass       = "guest"
+	defaultCacheHost    = "web-cache"
+	defaultCachePort    = "6380"
+	defaultGraphAddress = "localhost"
+	defaultGraphPort    = "9080"
 )
 
 type Config struct {
@@ -33,6 +35,7 @@ type Config struct {
 	PostgresAdress string
 	QueueAdress    string
 	CacheAdress    string
+	GraphAdress    string
 	Dns            string
 	AuthType       AuthType
 }
@@ -129,6 +132,16 @@ func Init() *Config {
 		CPort = defaultCachePort
 	}
 
+	var GraphAddress string
+	if GraphAddress, ok = os.LookupEnv("GRAPH_ADDRESS"); !ok {
+		GraphAddress = defaultGraphAddress
+	}
+
+	var GraphPort string
+	if GraphPort, ok = os.LookupEnv("GRAPH_PORT"); !ok {
+		GraphPort = defaultGraphPort
+	}
+
 	var VKClientID string
 	if VKClientID, ok = os.LookupEnv("VK_CLIENT_ID"); !ok {
 		log.Fatal("empty VK_CLIENT_ID")
@@ -179,6 +192,7 @@ func Init() *Config {
 		DbHost, DbPort, DbUser, DbPassword, DbName, DbSslMode)
 	queueAddress := fmt.Sprintf("amqp://%s:%s@%s:%s/", QuUser, QuPass, QuHost, QuPort)
 	cacheAdress := fmt.Sprintf("%s:%s", CHost, CPort)
+	graphAddress := fmt.Sprintf("%s%s", GraphAddress, GraphPort)
 
-	return &Config{host, port, serverMode, postgresAddr, queueAddress, cacheAdress, dns, authType}
+	return &Config{host, port, serverMode, postgresAddr, queueAddress, cacheAdress, graphAddress, dns, authType}
 }

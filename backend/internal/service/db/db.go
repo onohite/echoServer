@@ -15,4 +15,8 @@ type DBService interface {
 	// Game methods
 	GetAllGames() (*Games, error)
 	GetGameRanks(int) (*Ranks, error)
+	FindGameProfile(int) (string, error)
+	CreateGameProfile(string) (int, error)
+	UpdateGameProfileDescription(string, string, int) error
+	UpdateGameProfileContact(string, string, int) error
 }

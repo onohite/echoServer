@@ -38,10 +38,6 @@ func (db *PgxCon) AddUser(u User) (string, error) {
 		u.Name, u.Email, u.AvatarLink, u.Sex, u.Bdate, u.Unique).Scan(&id)
 
 	if err != nil {
-		return "", err
-	}
-
-	if err != nil {
 		tx.Rollback(connCtx)
 		return "", err
 	}

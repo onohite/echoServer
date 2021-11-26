@@ -21,14 +21,18 @@ services:
       - QUEUE_PASS=guest
       - CACHE_HOST=web-cache
       - CACHE_PORT=6379
+      - GRAPH_ADDRESS=standalone
+      - GRAPH_PORT=9080
     depends_on:
       - web-db
       - web-cache
       - rabbitmq
+      - standalone
     links:
       - web-db
       - web-cache
       - rabbitmq
+      - standalone
 
   consumer:
     container_name: 'consumer'
@@ -75,6 +79,24 @@ services:
     volumes:
       - ./storage/postgresql/data:/var/lib/postgresql/data
     restart: unless-stopped
+
+  standalone:
+    image: dgraph/standalone:v21.03.2
+    volumes:
+      - ./graph-storage/data:/dgraph
+    ports:
+      - 5080:5080
+      - 6080:6080
+      - 8081:8080
+      - 9080:9080
+    restart: on-failure
+
+  ratel:
+    image: dgraph/ratel:latest
+    ports:
+      - 8082:8000
+    depends_on:
+      - standalone
 
   web-cache:
     container_name: 'web-cache'
