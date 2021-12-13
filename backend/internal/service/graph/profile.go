@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/dgraph-io/dgo/protos/api"
+	"fmt"
+	"github.com/dgraph-io/dgo/v210/protos/api"
 	"github.com/labstack/gommon/log"
 )
 
@@ -77,7 +78,8 @@ func (c GraphConn) SetProfile(p GameProfile) (string, error) {
 	}
 
 	mu := &api.Mutation{
-		SetJson: pb,
+		CommitNow: true,
+		SetJson:   pb,
 	}
 
 	res, err := txn.Mutate(connCtx, mu)
@@ -87,19 +89,23 @@ func (c GraphConn) SetProfile(p GameProfile) (string, error) {
 	}
 	log.Printf("SetProfile complete successful with %v", res)
 
-	query := `query all($a: string){
-    all(func: eq(user_id, $a)) {
+	query := fmt.Sprintf(`query {
+    all(func: eq(user_id, %s)) {
       uid
     }
-}`
+}`, p.UserID)
 
-	resp, err := txn.QueryWithVars(connCtx, query, map[string]string{"$a": p.UserID})
+	secondTxn := c.client.NewTxn()
+	defer secondTxn.Discard(connCtx)
+
+	resp, err := secondTxn.Query(connCtx, query)
 	if err != nil {
 		log.Error(err)
 		return "", err
 	}
 	var uidReq UidRequest
-	err = json.Unmarshal(resp.Json, &uidReq)
+	log.Printf("%v", resp)
+	err = json.Unmarshal(resp.GetJson(), &uidReq)
 	if err != nil {
 		log.Error(err)
 		return "", err

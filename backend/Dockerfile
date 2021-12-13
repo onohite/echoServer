@@ -1,7 +1,7 @@
 FROM golang:1.17-alpine
 WORKDIR /app/backend
 COPY ./ ./
-RUN go mod download
+RUN go mod verify
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o upserver ./cmd/app/main.go
 
 FROM alpine:latest

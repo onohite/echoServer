@@ -22,7 +22,7 @@ const (
 	defaultQuPort       = "5672"
 	defaultQuUser       = "guest"
 	defaultQuPass       = "guest"
-	defaultCacheHost    = "web-cache"
+	defaultCacheHost    = "localhost"
 	defaultCachePort    = "6380"
 	defaultGraphAddress = "localhost"
 	defaultGraphPort    = "9080"
@@ -192,7 +192,7 @@ func Init() *Config {
 		DbHost, DbPort, DbUser, DbPassword, DbName, DbSslMode)
 	queueAddress := fmt.Sprintf("amqp://%s:%s@%s:%s/", QuUser, QuPass, QuHost, QuPort)
 	cacheAdress := fmt.Sprintf("%s:%s", CHost, CPort)
-	graphAddress := fmt.Sprintf("%s%s", GraphAddress, GraphPort)
+	graphAddress := fmt.Sprintf("%s:%s", GraphAddress, GraphPort)
 
 	return &Config{host, port, serverMode, postgresAddr, queueAddress, cacheAdress, graphAddress, dns, authType}
 }

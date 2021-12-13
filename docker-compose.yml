@@ -4,7 +4,7 @@ services:
     container_name: 'web'
     build: ./backend
     env_file:
-      - ./backend/.env
+      - backend/.env
     environment:
       - SERVER_MODE=dev
       - HOST=0.0.0.0
@@ -81,6 +81,7 @@ services:
     restart: unless-stopped
 
   standalone:
+    container_name: 'standalone'
     image: dgraph/standalone:v21.03.2
     volumes:
       - ./graph-storage/data:/dgraph

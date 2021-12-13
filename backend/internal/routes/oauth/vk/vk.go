@@ -33,7 +33,7 @@ func NewHandler(services *service.Service, cfg *config.Config) *Handler {
 		ClientID:     cfg.AuthType.VKconfig.ClientID,
 		ClientSecret: cfg.AuthType.VKconfig.ClientSecret,
 		RedirectURL:  fmt.Sprintf("%s/oauth/vk/redirect", cfg.Dns),
-		Scopes:       []string{"account"},
+		Scopes:       []string{"account,email"},
 		Endpoint:     vk.Endpoint,
 	}
 	return &Handler{services, &authCfg, cfg}
@@ -106,6 +106,8 @@ func (h Handler) Redirect(c echo.Context) error {
 		return err
 	}
 
+	email := token.Extra("email")
+
 	fields := strings.Join([]string{"bdate", "sex", "games", "photo_400_orig"}, ",")
 	url := fmt.Sprintf("https://api.vk.com/method/%s?v=5.124&fields=%s&access_token=%s", "users.get", fields, token.AccessToken)
 	resp, err := resty.New().R().Get(url)
@@ -127,6 +129,7 @@ func (h Handler) Redirect(c echo.Context) error {
 		Sex:        vkR.Sex,
 		Bdate:      vkR.Bdate,
 		Unique:     uniqueKey,
+		Email:      email.(string),
 	}
 
 	uuid, err := h.Services.DB.AddUser(user)
