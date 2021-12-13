@@ -51,9 +51,9 @@ func (h *Handler) CreateRemind(c echo.Context) error {
 
 type RemindUpdateData struct {
 	Id      string
-	Where   string
-	Message string
-	Date    string
+	Where   string `json:"where"`
+	Message string `json:"message"`
+	Date    string `json:"date"`
 }
 
 func (h *Handler) UpdateRemind(c echo.Context) error {

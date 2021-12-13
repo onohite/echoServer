@@ -23,6 +23,6 @@ storage/
 graph-storage/
 
 # ignore files in folder
-backend/docs/*
+#backend/docs/*
 # ...but keep docs.go
 !backend/docs/docs.go
