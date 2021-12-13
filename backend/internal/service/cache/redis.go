@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-redis/redis/v8"
-	"strconv"
 	"time"
 )
 
@@ -96,25 +95,4 @@ func (r RedisDB) Del(key ...string) (int64, error) {
 		return 0, err
 	}
 	return deleted, nil
-}
-
-func (c RedisDB) CheckCacheStatus(uri string) (int, error) {
-	ctx, cancel := context.WithCancel(c.cacheCtx)
-	defer cancel()
-	result, err := c.CacheConn.Get(ctx, uri).Result()
-	if err != nil {
-		return 0, err
-	}
-	status, _ := strconv.Atoi(result)
-	return status, nil
-}
-
-func (c RedisDB) AddCacheStatus(uri string, status int) error {
-	ctx, cancel := context.WithCancel(c.cacheCtx)
-	defer cancel()
-	err := c.CacheConn.Set(ctx, uri, status, TTL).Err()
-	if err != nil {
-		return err
-	}
-	return nil
 }

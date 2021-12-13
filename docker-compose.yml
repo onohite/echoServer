@@ -21,18 +21,15 @@ services:
       - QUEUE_PASS=guest
       - CACHE_HOST=web-cache
       - CACHE_PORT=6379
-      - GRAPH_ADDRESS=standalone
-      - GRAPH_PORT=9080
+#      - DNS_SERVER=
     depends_on:
       - web-db
       - web-cache
       - rabbitmq
-      - standalone
     links:
       - web-db
       - web-cache
       - rabbitmq
-      - standalone
 
   consumer:
     container_name: 'consumer'
@@ -43,8 +40,12 @@ services:
       - QUEUE_PORT=5672
       - QUEUE_USER=guest
       - QUEUE_PASS=guest
-      - CACHE_HOST=web-cache
-      - CACHE_PORT=6379
+      - DBUSER=user
+      - DBPASSWORD=pass
+      - DBNAME=db
+      - DBHOST=web-db
+      - DBPORT=5432
+      - DBSSLMODE=disable
     depends_on:
       - rabbitmq
       - nginx
@@ -52,6 +53,23 @@ services:
     links:
       - nginx
       - web-cache
+    restart: unless-stopped
+
+  emailsender:
+    container_name: 'emailsender'
+    build: ./EmailSender
+    environment:
+      - DBUSER=user
+      - DBPASSWORD=pass
+      - DBNAME=db
+      - DBHOST=web-db
+      - DBPORT=5432
+      - DBSSLMODE=disable
+      - Ticker=5
+    depends_on:
+      - web-db
+    links:
+      - web-db
     restart: unless-stopped
 
   rabbitmq:
@@ -80,32 +98,12 @@ services:
       - ./storage/postgresql/data:/var/lib/postgresql/data
     restart: unless-stopped
 
-  standalone:
-    container_name: 'standalone'
-    image: dgraph/standalone:v21.03.2
-    volumes:
-      - ./graph-storage/data:/dgraph
-    ports:
-      - 5080:5080
-      - 6080:6080
-      - 8081:8080
-      - 9080:9080
-    restart: on-failure
-
-  ratel:
-    image: dgraph/ratel:latest
-    ports:
-      - 8082:8000
-    depends_on:
-      - standalone
-
   web-cache:
     container_name: 'web-cache'
     image: "redis:alpine"
     ports:
       - "6380:6379"
     restart: unless-stopped
-
 
   nginx:
     # specifies the latest nginx image

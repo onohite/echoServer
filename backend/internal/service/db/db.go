@@ -12,11 +12,8 @@ type DBService interface {
 	UpdateUserSex(int, string) error
 	UpdateUserBdate(string, string) error
 
-	// Game methods
-	GetAllGames() (*Games, error)
-	GetGameRanks(int) (*Ranks, error)
-	FindGameProfile(int) (string, error)
-	CreateGameProfile(string) (int, error)
-	UpdateGameProfileDescription(string, string, int) error
-	UpdateGameProfileContact(string, string, int) error
+	GetListReminds(string) ([]Remind, error)
+	UpdateRemindTo(string, string) error
+	UpdateRemindMessage(string, string) error
+	UpdateRemindDate(string, string) error
 }
