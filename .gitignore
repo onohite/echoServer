@@ -19,7 +19,6 @@ vendor/
 backend/.env
 
 .idea/
-storage/
 graph-storage/
 
 # ignore files in folder
